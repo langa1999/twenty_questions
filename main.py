@@ -1,36 +1,32 @@
-from models import Agent, PlayerType, Conversation
-from auth import get_client
+from models import Agent, PlayerType, Game, Answer, Question
 
 
-client = get_client()
+def play_game(iterations: int, game: Game, guesser: Agent, host: Agent) -> bool:
+    for x in range(iterations):
+        print(f"\nQuestion {game.iterations}:")
+        while game.iterations < 20:
+            if game.next_question(guesser=guesser, host=host):
+                if game.question_answer_set[-1]['answer'].lower() == 'yes':
+                    game.game_won = True
+                    return game.game_won
+    return game.won
+
 
 host = Agent(
     player=PlayerType.HOST,
-    system_message="You are thinking of a spoon. You will be asked questions and you answer questions with Yes/No only."
+    system_message="You are thinking of a spoon. You will be asked questions and you answer questions with Yes/No only.",
+    response_object=Answer,
 )
 
 guesser = Agent(
     player=PlayerType.GUESSER,
-    system_message="You are the guesser in the 20 questions game. You try to find what the other player is thinking of "
-                   "by asking yes or no questions. With every question you provide examples of what yes or no"
-                   "possibilities are. When you are sure of the answer or getting close to 20, you make a guess. "
+    system_message="You are the guesser in the 20 questions game. "
+                   "You try to find what the other player is thinking of by asking yes or no questions."
+                   "When you are sure of the answer or getting close to 20, you make a guess. "
                    "Ask a question.",
+    response_object=Question,
 )
 
-conversation = Conversation(
-    current_player=guesser,
-    next_player=host,
-    conversation_history=[{
-            "role": "system",
-            "content": "Welcome, you are playing the 20 questions game!"
-        }]
-)
+game_result = play_game(iterations=20, game=Game(), guesser=guesser, host=host)
 
-for i in range(3):
-    print(f"\nIteration {i + 1}:")
-
-    context = conversation.get_context(conversation.current_player)  # GUESSER
-    question = conversation.current_player.get_response(context)  # QUESTION
-    conversation.append_message(question)
-
-    conversation.swap_players()
+print(f"The game was won: {game_result}")

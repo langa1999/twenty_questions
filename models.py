@@ -1,11 +1,14 @@
 from enum import Enum
-from typing import List, Dict, Optional
-import openai
-
+from typing import List, Dict, Optional, Literal, Type
+from auth import get_client
 from pydantic import BaseModel, Field
+import os
+
+client = get_client()
+model = os.getenv("MODEL")
 
 
-class Guess(BaseModel):
+class Question(BaseModel):
     """
     This class is used for the response from the guesser playing the 20 questions game.
     It can ask a question or make a guess. The guess does not need to be too specific. For example:
@@ -19,14 +22,10 @@ class Guess(BaseModel):
         description="This be next question to ask the user for example: Is it an animal? "
                     "Or it can be the final guess for example: My guess is a dog. "
     )
-    examples: Optional[str] = Field(
-        description="Examples of yes and no answers. Use this format: Yes (e.g., dog, cat), No (e.g., cars, bicycles). "
-                    "If is_final_guess is True, this field is left empty."
-    )
 
 
-class GuessResponse(BaseModel):
-    response: bool
+class Answer(BaseModel):
+    response: Literal["yes", "no"]
 
 
 class PlayerType(str, Enum):
@@ -37,44 +36,61 @@ class PlayerType(str, Enum):
 class Agent(BaseModel):
     player: PlayerType
     system_message: str
+    response_object: Type[Question | Answer]
 
-    def get_response(self, context: List[Dict]) -> List[Dict]:
-        print(f"CONTEXT = {context}")
-        response = openai.chat.completions.create(
-            model="gpt-3.5-turbo",
-            messages=context,
+
+class Game(BaseModel):
+    question_answer_set: List[Dict] = []
+    last_question: str = ''
+    game_won: Optional[bool] = False
+    iterations: int = 0
+
+    def next_question(self, guesser: Agent, host: Agent) -> bool:
+
+        # The guesser guesses a question
+        guess = client.beta.chat.completions.parse(
+            model=model,
+            messages=self.get_context(guesser),
             max_tokens=150,
             temperature=0,
+            response_format=guesser.response_object
         )
 
-        content = response.choices[0].message.content
-        print(f"RESPONSE = {content}")
-        return [{'role': 'assistant', 'content': content}]
+        guess = guess.choices[0].message.parsed
 
+        self.last_question = guess.content
 
-class Conversation(BaseModel):
-    current_player: Agent
-    next_player: Agent
-    conversation_history: List[Dict] = []
-    last_question: str = ''
+        answer = client.beta.chat.completions.parse(
+            model=model,
+            messages=self.get_context(host),
+            max_tokens=150,
+            temperature=0,
+            response_format=host.response_object
+        )
+        answer = answer.choices[0].message.parsed
+
+        self.question_answer_set.append({'question': self.last_question, 'answer': answer.response})
+
+        print(self.question_answer_set[-1])
+
+        self.iterations += 1
+
+        return guess.is_final_guess
 
     def get_context(self, agent: Agent) -> List[Dict]:
-        if agent.player == PlayerType.GUESSER:
-            context = agent.system_message
-            for i in range(1, len(self.conversation_history) - 1, 2):
-                context += "This is what you know: \n"
-                context += self.conversation_history[i]['content'] + ": " + self.conversation_history[i + 1][
-                    'content'] + "\n"
-            return [{"role": "assistant", "content": context}]
+        context = [{"role": "system", "content": agent.system_message}]
+        if agent.player == PlayerType.GUESSER and self.question_answer_set:
+            context.append({'role': 'assistant', 'content': self.format_question_answer_set()})
+            print('CONTEXT: ')
+            print(context[-1]['content'])
+        elif agent.player == PlayerType.HOST and self.last_question:
+            context.append({"role": "assistant", "content": self.last_question})
 
-        elif agent.player == PlayerType.HOST:
-            context = [{"role": "system", "content": agent.system_message},
-                       {"role": "assistant", "content": self.conversation_history[-1]['content']}
-                       ]
-            return context
+        return context
 
-    def swap_players(self):
-        self.current_player, self.next_player = self.next_player, self.current_player
-
-    def append_message(self, message: List[Dict]) -> None:
-        self.conversation_history += message
+    def format_question_answer_set(self) -> str:
+        result = "\nThis is what you know: \n"
+        for item in self.question_answer_set:
+            result += f"{item['question']} {item['answer']}\n"
+        result = result + f"\nYou have {str(20 - self.iterations)} questions left. "
+        return result
