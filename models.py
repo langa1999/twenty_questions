@@ -39,11 +39,38 @@ class Agent(BaseModel):
     response_object: Type[Question | Answer]
 
 
+class GameStatistics(BaseModel):
+    game_won: bool = False
+    reason: str = ''
+    iterations: int = 0
+    question_answer_set: List[Dict] = []
+
+
 class Game(BaseModel):
     question_answer_set: List[Dict] = []
     last_question: str = ''
-    game_won: Optional[bool] = False
     iterations: int = 0
+
+    def play(self, guesser: Agent, host: Agent) -> GameStatistics:
+        game_won = False
+        reason = "Guesser ran out of questions"
+        for x in range(20):
+            while self.iterations < 20:
+                if self.next_question(guesser=guesser, host=host):
+                    if self.question_answer_set[-1]['answer'].lower() == 'yes':
+                        game_won = True
+                        reason="Guesser guessed the topic"
+                    elif self.question_answer_set[-1]['answer'].lower() == 'no':
+                        game_won = False
+                        reason = "Guesser guessed the wrong topic"
+
+        game_statistics = GameStatistics(
+            game_won=game_won,
+            reason=reason,
+            iterations=self.iterations,
+            question_answer_set=self.question_answer_set,
+        )
+        return game_statistics
 
     def next_question(self, guesser: Agent, host: Agent) -> bool:
 
@@ -81,8 +108,7 @@ class Game(BaseModel):
         context = [{"role": "system", "content": agent.system_message}]
         if agent.player == PlayerType.GUESSER and self.question_answer_set:
             context.append({'role': 'assistant', 'content': self.format_question_answer_set()})
-            print('CONTEXT: ')
-            print(context[-1]['content'])
+
         elif agent.player == PlayerType.HOST and self.last_question:
             context.append({"role": "assistant", "content": self.last_question})
 

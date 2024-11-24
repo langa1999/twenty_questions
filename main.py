@@ -1,17 +1,5 @@
 from models import Agent, PlayerType, Game, Answer, Question
 
-
-def play_game(iterations: int, game: Game, guesser: Agent, host: Agent) -> bool:
-    for x in range(iterations):
-        print(f"\nQuestion {game.iterations}:")
-        while game.iterations < 20:
-            if game.next_question(guesser=guesser, host=host):
-                if game.question_answer_set[-1]['answer'].lower() == 'yes':
-                    game.game_won = True
-                    return game.game_won
-    return game.won
-
-
 host = Agent(
     player=PlayerType.HOST,
     system_message="You are thinking of a spoon. You will be asked questions and you answer questions with Yes/No only.",
@@ -27,6 +15,8 @@ guesser = Agent(
     response_object=Question,
 )
 
-game_result = play_game(iterations=20, game=Game(), guesser=guesser, host=host)
+game = Game()
 
-print(f"The game was won: {game_result}")
+game_statistics = game.play(guesser=guesser, host=host)
+
+print(game_statistics)
