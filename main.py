@@ -32,8 +32,5 @@ for i in range(3):
     context = conversation.get_context(conversation.current_player)  # GUESSER
     question = conversation.current_player.get_response(context)  # QUESTION
     conversation.append_message(question)
-    conversation.last_question = question
 
-    context = conversation.get_context(conversation.next_player)  # GUESSER
-    answer = conversation.next_player.get_response(context)  # QUESTION
-    conversation.append_message(answer)
+    conversation.swap_players()

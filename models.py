@@ -5,58 +5,6 @@ import openai
 from pydantic import BaseModel, Field
 
 
-class PlayerType(str, Enum):
-    GUESSER = "GUESSER"
-    HOST = "HOST"
-
-
-class Agent(BaseModel):
-    player: PlayerType
-    system_message: str
-
-    def get_response(self, context: List[Dict]) -> List[Dict]:
-        response = openai.chat.completions.create(
-            model="gpt-3.5-turbo",
-            messages=context,
-            max_tokens=150,
-            temperature=0,
-        )
-
-        content = response.choices[0].message.content
-
-        return [{'role': 'assistant', 'content': content}]
-
-
-class Conversation(BaseModel):
-    current_player: Agent
-    next_player: Agent
-    conversation_history: List[Dict] = []
-    last_question: str = ''
-
-    def get_context(self, agent: Agent) -> List[Dict]:
-        if agent.player == PlayerType.GUESSER:
-            context = agent.system_message
-            for i in range(1, len(self.conversation_history) - 1, 2):
-                context += "This is what you know: \n"
-                context += self.conversation_history[i]['content'] + " " + self.conversation_history[i + 1][
-                    'content'] + "\n"
-            print(f"Player GUESSER: This is the context {context}")
-            return [{"role": "assistant", "content": context}]
-
-        elif agent.player == PlayerType.HOST:
-            print(f"Player HOST: {agent.system_message}")
-            context = [{"role": "assistant", "content": agent.system_message},
-                       {"role": "assistant", "content": self.last_question}
-                       ]
-            return context
-
-    def swap_players(self):
-        self.current_player, self.next_player = self.next_player, self.current_player
-
-    def append_message(self, message: List[Dict]) -> None:
-        self.conversation_history += message
-
-
 class Guess(BaseModel):
     """
     This class is used for the response from the guesser playing the 20 questions game.
@@ -79,3 +27,54 @@ class Guess(BaseModel):
 
 class GuessResponse(BaseModel):
     response: bool
+
+
+class PlayerType(str, Enum):
+    GUESSER = "GUESSER"
+    HOST = "HOST"
+
+
+class Agent(BaseModel):
+    player: PlayerType
+    system_message: str
+
+    def get_response(self, context: List[Dict]) -> List[Dict]:
+        print(f"CONTEXT = {context}")
+        response = openai.chat.completions.create(
+            model="gpt-3.5-turbo",
+            messages=context,
+            max_tokens=150,
+            temperature=0,
+        )
+
+        content = response.choices[0].message.content
+        print(f"RESPONSE = {content}")
+        return [{'role': 'assistant', 'content': content}]
+
+
+class Conversation(BaseModel):
+    current_player: Agent
+    next_player: Agent
+    conversation_history: List[Dict] = []
+    last_question: str = ''
+
+    def get_context(self, agent: Agent) -> List[Dict]:
+        if agent.player == PlayerType.GUESSER:
+            context = agent.system_message
+            for i in range(1, len(self.conversation_history) - 1, 2):
+                context += "This is what you know: \n"
+                context += self.conversation_history[i]['content'] + ": " + self.conversation_history[i + 1][
+                    'content'] + "\n"
+            return [{"role": "assistant", "content": context}]
+
+        elif agent.player == PlayerType.HOST:
+            context = [{"role": "system", "content": agent.system_message},
+                       {"role": "assistant", "content": self.conversation_history[-1]['content']}
+                       ]
+            return context
+
+    def swap_players(self):
+        self.current_player, self.next_player = self.next_player, self.current_player
+
+    def append_message(self, message: List[Dict]) -> None:
+        self.conversation_history += message
