@@ -1,4 +1,5 @@
-from models import Agent, PlayerType, Game, Answer, Question
+from models.agent_models import Agent, PlayerType, Answer, Question
+from models.game_models import Game
 from prompts import HOST_PROMPT, GUESSER_PROMPT
 
 host = Agent(
