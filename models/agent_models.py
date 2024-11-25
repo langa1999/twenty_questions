@@ -1,12 +1,12 @@
 from enum import Enum
 from typing import Literal, Type
-from auth import get_client
 from pydantic import BaseModel, Field
-
-client = get_client()
 
 
 class SuggestedQuestions(BaseModel):
+    """
+    Currently unused. Could be used to make the agent think of multiple questions and chose the best option
+    """
     question: str = Field(description="Question in this format 'Is it a ...?'")
     pro_cons: str = Field(description="Identify how broad this question is, and if it eliminates the most options")
     answer: str = Field(description="Broad answers to the questions asked. Dont go into detail, keep broad categories.")
