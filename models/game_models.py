@@ -12,9 +12,11 @@ class GameStatistics(BaseModel):
     reason: str = ''
     iterations: int = 0
     question_answer_set: List[Dict] = []
+    topic: str
 
 
 class Game(BaseModel):
+    topic: str = "car"
     question_answer_set: List[Dict] = []
     token_max: int = settings.max_tokens
     last_question: str = ''
@@ -30,6 +32,7 @@ class Game(BaseModel):
                         reason="Guesser guessed the topic",
                         iterations=self.iterations,
                         question_answer_set=self.question_answer_set,
+                        topic=self.topic
                     )
                     return game_statistics
                 elif self.question_answer_set[-1]['answer'].lower() == 'no':
@@ -38,6 +41,7 @@ class Game(BaseModel):
                         reason="Guesser guessed the wrong topic",
                         iterations=self.iterations,
                         question_answer_set=self.question_answer_set,
+                        topic=self.topic
                     )
                     return game_statistics
 
@@ -46,6 +50,7 @@ class Game(BaseModel):
             reason="Guesser ran out of questions",
             iterations=self.iterations,
             question_answer_set=self.question_answer_set,
+            topic=self.topic
         )
         return game_statistics
 
