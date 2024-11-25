@@ -12,7 +12,7 @@ topics = [
     "Paris",
     "Sun",
     "Robot",
-    "Star"
+    "Star",
 ]
 
 # TODO: These should be named parameters to avoid errors in the future.

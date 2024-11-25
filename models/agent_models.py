@@ -7,9 +7,14 @@ class SuggestedQuestions(BaseModel):
     """
     Currently unused. Could be used to make the agent think of multiple questions and chose the best option
     """
+
     question: str = Field(description="Question in this format 'Is it a ...?'")
-    pro_cons: str = Field(description="Identify how broad this question is, and if it eliminates the most options")
-    answer: str = Field(description="Broad answers to the questions asked. Dont go into detail, keep broad categories.")
+    pro_cons: str = Field(
+        description="Identify how broad this question is, and if it eliminates the most options"
+    )
+    answer: str = Field(
+        description="Broad answers to the questions asked. Dont go into detail, keep broad categories."
+    )
 
 
 class Question(BaseModel):
@@ -19,6 +24,7 @@ class Question(BaseModel):
     The best question is selected
     We also don't care about size (small-dog, big-dog) or color (black-house, white-house).
     """
+
     is_final_guess: bool = Field(
         description="Return True if this is the final and best guess. Otherwise, return False."
     )
@@ -43,4 +49,3 @@ class Agent(BaseModel):
     system_message: str
     response_object: Type[Question | Answer]
     temperature: int = 0
-

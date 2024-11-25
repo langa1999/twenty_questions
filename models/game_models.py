@@ -9,7 +9,7 @@ client = get_client()
 
 class GameStatistics(BaseModel):
     game_won: bool = False
-    reason: str = ''
+    reason: str = ""
     iterations: int = 0
     question_answer_set: List[Dict] = []
     topic: str
@@ -19,29 +19,29 @@ class Game(BaseModel):
     topic: str = "car"
     question_answer_set: List[Dict] = []
     token_max: int = settings.max_tokens
-    last_question: str = ''
+    last_question: str = ""
     iterations: int = 0
 
     def play(self, guesser: Agent, host: Agent) -> GameStatistics:
         while self.iterations < 20:
             if self.next_question(guesser=guesser, host=host):
                 print("Final guess has been made!")
-                if self.question_answer_set[-1]['answer'].lower() == 'yes':
+                if self.question_answer_set[-1]["answer"].lower() == "yes":
                     game_statistics = GameStatistics(
                         game_won=True,
                         reason="Guesser guessed the topic",
                         iterations=self.iterations,
                         question_answer_set=self.question_answer_set,
-                        topic=self.topic
+                        topic=self.topic,
                     )
                     return game_statistics
-                elif self.question_answer_set[-1]['answer'].lower() == 'no':
+                elif self.question_answer_set[-1]["answer"].lower() == "no":
                     game_statistics = GameStatistics(
                         game_won=False,
                         reason="Guesser guessed the wrong topic",
                         iterations=self.iterations,
                         question_answer_set=self.question_answer_set,
-                        topic=self.topic
+                        topic=self.topic,
                     )
                     return game_statistics
 
@@ -50,18 +50,20 @@ class Game(BaseModel):
             reason="Guesser ran out of questions",
             iterations=self.iterations,
             question_answer_set=self.question_answer_set,
-            topic=self.topic
+            topic=self.topic,
         )
         return game_statistics
 
-    def get_chat_completion(self, context: list[dict], temperature: int, response_format):
+    def get_chat_completion(
+        self, context: list[dict], temperature: int, response_format
+    ):
         try:
             response = client.beta.chat.completions.parse(
                 model=settings.model,
                 messages=context,
                 max_tokens=self.token_max,
                 temperature=temperature,
-                response_format=response_format
+                response_format=response_format,
             )
             return response
         except LengthFinishReasonError as e:
@@ -76,7 +78,7 @@ class Game(BaseModel):
         guess = self.get_chat_completion(
             context=self.get_context(guesser),
             response_format=guesser.response_object,
-            temperature=guesser.temperature
+            temperature=guesser.temperature,
         )
 
         guess = guess.choices[0].message.parsed
@@ -85,11 +87,13 @@ class Game(BaseModel):
         answer = self.get_chat_completion(
             context=self.get_context(host),
             response_format=host.response_object,
-            temperature=host.temperature
+            temperature=host.temperature,
         )
         answer = answer.choices[0].message.parsed
 
-        self.question_answer_set.append({'question': self.last_question, 'answer': answer.response})
+        self.question_answer_set.append(
+            {"question": self.last_question, "answer": answer.response}
+        )
 
         print(self.question_answer_set[-1])
 
@@ -100,7 +104,9 @@ class Game(BaseModel):
     def get_context(self, agent: Agent) -> List[Dict]:
         context = [{"role": "system", "content": agent.system_message}]
         if agent.player == PlayerType.GUESSER and self.question_answer_set:
-            context.append({'role': 'assistant', 'content': self.format_question_answer_set()})
+            context.append(
+                {"role": "assistant", "content": self.format_question_answer_set()}
+            )
 
         elif agent.player == PlayerType.HOST and self.last_question:
             context.append({"role": "assistant", "content": self.last_question})
