@@ -12,3 +12,7 @@
    ```bash
    python main.py
    ```  
+
+#### Future improvements:
+- Add logic to ensure the guesser does not ask a repeated question.
+- Break down the guesser agent into two agents (one to generate questions and another for guessing the topic). 

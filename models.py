@@ -1,26 +1,32 @@
 from enum import Enum
-from typing import List, Dict, Optional, Literal, Type
-from auth import get_client
+from typing import List, Dict, Literal, Type, ClassVar
+from auth import get_client, settings
 from pydantic import BaseModel, Field
-import os
+from openai._exceptions import LengthFinishReasonError
 
 client = get_client()
-model = os.getenv("MODEL")
+
+
+class SuggestedQuestions(BaseModel):
+    question: str = Field(description="Question in this format 'Is it a ...?'")
+    pro_cons: str = Field(description="Identify how broad this question is, and if it eliminates the most options")
+    answer: str = Field(description="Broad answers to the questions asked. Dont go into detail, keep broad categories.")
 
 
 class Question(BaseModel):
     """
-    This class is used for the response from the guesser playing the 20 questions game.
-    It can ask a question or make a guess. The guess does not need to be too specific. For example:
-    If the user is thinking of a knife the LLM can guess "knife". It does NOT need to identify what type of knife it is.
+    This class is used by the guesser playing the 20 questions game.
+    It makes a list of suggested questions analysing the pro/con of each question.
+    The best question is selected
     We also don't care about size (small-dog, big-dog) or color (black-house, white-house).
     """
     is_final_guess: bool = Field(
         description="Return True if this is the final and best guess. Otherwise, return False."
     )
     content: str = Field(
-        description="This be next question to ask the user for example: Is it an animal? "
-                    "Or it can be the final guess for example: My guess is a dog. "
+        description="""This is the question to ask the user. For example: Is it an animal?
+                    When you have narrowed it down, you are not afraid to make a final guess.
+                    For example: 'My guess is a dog.'"""
     )
 
 
@@ -48,51 +54,70 @@ class GameStatistics(BaseModel):
 
 class Game(BaseModel):
     question_answer_set: List[Dict] = []
+    token_max: int = settings.max_tokens
     last_question: str = ''
     iterations: int = 0
 
     def play(self, guesser: Agent, host: Agent) -> GameStatistics:
-        game_won = False
-        reason = "Guesser ran out of questions"
         for x in range(20):
             while self.iterations < 20:
                 if self.next_question(guesser=guesser, host=host):
+                    print("Final guess has been made!")
                     if self.question_answer_set[-1]['answer'].lower() == 'yes':
-                        game_won = True
-                        reason="Guesser guessed the topic"
+                        game_statistics = GameStatistics(
+                            game_won=True,
+                            reason="Guesser guessed the topic",
+                            iterations=self.iterations,
+                            question_answer_set=self.question_answer_set,
+                        )
+                        return game_statistics
                     elif self.question_answer_set[-1]['answer'].lower() == 'no':
-                        game_won = False
-                        reason = "Guesser guessed the wrong topic"
+                        game_statistics = GameStatistics(
+                            game_won=False,
+                            reason="Guesser guessed the wrong topic",
+                            iterations=self.iterations,
+                            question_answer_set=self.question_answer_set,
+                        )
+                        return game_statistics
 
         game_statistics = GameStatistics(
-            game_won=game_won,
-            reason=reason,
+            game_won=False,
+            reason="Guesser ran out of questions",
             iterations=self.iterations,
             question_answer_set=self.question_answer_set,
         )
         return game_statistics
 
-    def next_question(self, guesser: Agent, host: Agent) -> bool:
+    def get_chat_completion(self, context: list[dict], response_format):
+        try:
+            response = client.beta.chat.completions.parse(
+                model=settings.model,
+                messages=context,
+                max_tokens=self.token_max,
+                temperature=0,
+                response_format=response_format
+            )
+            return response
+        except LengthFinishReasonError as e:
+            self.token_max += 100
+            print(f">>> Token limit increased to {self.token_max}")
+            return self.get_chat_completion(context, response_format)
+        except Exception as e:
+            print(f"Unexpected error: {e}")
+            return None
 
-        # The guesser guesses a question
-        guess = client.beta.chat.completions.parse(
-            model=model,
-            messages=self.get_context(guesser),
-            max_tokens=150,
-            temperature=0,
-            response_format=guesser.response_object
+    def next_question(self, guesser: Agent, host: Agent) -> bool:
+        guess = self.get_chat_completion(
+            context=self.get_context(guesser),
+            response_format=guesser.response_object,
         )
 
         guess = guess.choices[0].message.parsed
-
         self.last_question = guess.content
 
-        answer = client.beta.chat.completions.parse(
-            model=model,
-            messages=self.get_context(host),
-            max_tokens=150,
-            temperature=0,
-            response_format=host.response_object
+        answer = self.get_chat_completion(
+            context=self.get_context(host),
+            response_format=host.response_object,
         )
         answer = answer.choices[0].message.parsed
 
@@ -115,7 +140,7 @@ class Game(BaseModel):
         return context
 
     def format_question_answer_set(self) -> str:
-        result = "\nThis is what you know: \n"
+        result = "\nThese are the questions you have already asked: \n"
         for item in self.question_answer_set:
             result += f"{item['question']} {item['answer']}\n"
         result = result + f"\nYou have {str(20 - self.iterations)} questions left. "
