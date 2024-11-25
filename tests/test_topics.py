@@ -15,7 +15,9 @@ topics = [
     "Star"
 ]
 
-test_cases = [(HOST_PROMPT, GUESSER_PROMPT, topic) for topic in topics]
+# TODO: These should be named parameters to avoid errors in the future.
+# (HOST_PROMPT, HOST_TEMPERATURE, GUESSER_PROMPT, GUESSER_TEMPERATURE, TOPIC)
+test_cases = [(HOST_PROMPT, 0, GUESSER_PROMPT, 0, topic) for topic in topics]
 
 
 with ThreadPoolExecutor() as executor:

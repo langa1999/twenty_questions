@@ -42,4 +42,5 @@ class Agent(BaseModel):
     player: PlayerType
     system_message: str
     response_object: Type[Question | Answer]
+    temperature: int = 0
 

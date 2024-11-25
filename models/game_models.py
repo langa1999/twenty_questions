@@ -54,13 +54,13 @@ class Game(BaseModel):
         )
         return game_statistics
 
-    def get_chat_completion(self, context: list[dict], response_format):
+    def get_chat_completion(self, context: list[dict], temperature: int, response_format):
         try:
             response = client.beta.chat.completions.parse(
                 model=settings.model,
                 messages=context,
                 max_tokens=self.token_max,
-                temperature=0,
+                temperature=temperature,
                 response_format=response_format
             )
             return response
@@ -76,6 +76,7 @@ class Game(BaseModel):
         guess = self.get_chat_completion(
             context=self.get_context(guesser),
             response_format=guesser.response_object,
+            temperature=guesser.temperature
         )
 
         guess = guess.choices[0].message.parsed
@@ -84,6 +85,7 @@ class Game(BaseModel):
         answer = self.get_chat_completion(
             context=self.get_context(host),
             response_format=host.response_object,
+            temperature=host.temperature
         )
         answer = answer.choices[0].message.parsed
 
