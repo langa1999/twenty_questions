@@ -21,26 +21,25 @@ class Game(BaseModel):
     iterations: int = 0
 
     def play(self, guesser: Agent, host: Agent) -> GameStatistics:
-        for x in range(20):
-            while self.iterations < 20:
-                if self.next_question(guesser=guesser, host=host):
-                    print("Final guess has been made!")
-                    if self.question_answer_set[-1]['answer'].lower() == 'yes':
-                        game_statistics = GameStatistics(
-                            game_won=True,
-                            reason="Guesser guessed the topic",
-                            iterations=self.iterations,
-                            question_answer_set=self.question_answer_set,
-                        )
-                        return game_statistics
-                    elif self.question_answer_set[-1]['answer'].lower() == 'no':
-                        game_statistics = GameStatistics(
-                            game_won=False,
-                            reason="Guesser guessed the wrong topic",
-                            iterations=self.iterations,
-                            question_answer_set=self.question_answer_set,
-                        )
-                        return game_statistics
+        while self.iterations < 20:
+            if self.next_question(guesser=guesser, host=host):
+                print("Final guess has been made!")
+                if self.question_answer_set[-1]['answer'].lower() == 'yes':
+                    game_statistics = GameStatistics(
+                        game_won=True,
+                        reason="Guesser guessed the topic",
+                        iterations=self.iterations,
+                        question_answer_set=self.question_answer_set,
+                    )
+                    return game_statistics
+                elif self.question_answer_set[-1]['answer'].lower() == 'no':
+                    game_statistics = GameStatistics(
+                        game_won=False,
+                        reason="Guesser guessed the wrong topic",
+                        iterations=self.iterations,
+                        question_answer_set=self.question_answer_set,
+                    )
+                    return game_statistics
 
         game_statistics = GameStatistics(
             game_won=False,
