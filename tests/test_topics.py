@@ -4,8 +4,8 @@ from prompts import HOST_PROMPT, GUESSER_PROMPT
 
 topics = [
     "Dog",
-    "Apple",
     "Car",
+    "Apple",
     "Shakespeare",
     "Mountain",
     "Water",
@@ -28,4 +28,4 @@ for game_played in results:
     if game_played.game_won:
         games_won += 1
 
-print(f"Percentage of games won {100*games_won/len([topics])}%")
+print(f"Percentage of games won {100*games_won/(len([topics])+1)}%")
