@@ -1,6 +1,6 @@
 from concurrent.futures import ThreadPoolExecutor, as_completed
-from main import run_game
-from prompts import HOST_PROMPT, GUESSER_PROMPT
+from src.main import run_game
+from src.prompts import HOST_PROMPT, GUESSER_PROMPT
 
 topics = [
     "Dog",

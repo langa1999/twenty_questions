@@ -1,6 +1,6 @@
 from models.agent_models import Agent, PlayerType, Answer, Question
 from models.game_models import Game
-from prompts import HOST_PROMPT, GUESSER_PROMPT
+from src.prompts import HOST_PROMPT, GUESSER_PROMPT
 
 
 def run_game(host_prompt: str, guesser_prompt: str, topic: str):
