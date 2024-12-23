@@ -1,4 +1,10 @@
 ### Welcome to the 20 Questions Game!
+The 20 Questions game is a guessing game where one player, the "guest," attempts to deduce an unknown object, concept, or entity by asking up to 20 yes-or-no questions. The other player, the "host," provides yes/no answers to help guide the guest toward the correct answer.
+
+When played between two large language models, the roles are divided as follows:
+
+Guest Agent: The guest model generates strategic yes-or-no questions based on prior responses to systematically eliminate incorrect options and converge on the answer.
+Host Agent: The host model starts with a preselected "answer" and evaluates each question posed by the guest, responding truthfully with "yes," "no," or occasionally "unsure," depending on the specificity of the query.
 
 #### Setup Instructions:
 
