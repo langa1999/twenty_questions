@@ -1,0 +1,89 @@
+
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+@layer base {
+  :root {
+    --background: 0 0% 100%;
+    --foreground: 240 10% 3.9%;
+    --card: 0 0% 100%;
+    --card-foreground: 240 10% 3.9%;
+    --popover: 0 0% 100%;
+    --popover-foreground: 240 10% 3.9%;
+    --primary: 271 91% 65%;
+    --primary-foreground: 0 0% 100%;
+    --secondary: 169 100% 50%;
+    --secondary-foreground: 0 0% 100%;
+    --muted: 240 4.8% 95.9%;
+    --muted-foreground: 240 3.8% 46.1%;
+    --accent: 35 100% 50%;
+    --accent-foreground: 0 0% 100%;
+    --destructive: 346 87% 58%;
+    --destructive-foreground: 0 0% 100%;
+    --border: 240 5.9% 90%;
+    --input: 240 5.9% 90%;
+    --ring: 271 91% 65%;
+    --radius: 0.75rem;
+  }
+}
+
+@layer base {
+  * {
+    @apply border-border;
+  }
+  body {
+    @apply bg-background text-foreground antialiased;
+  }
+}
+
+.message-container {
+  @apply space-y-4 max-h-[70vh] overflow-y-auto p-4 rounded-lg bg-secondary/10 backdrop-blur-sm;
+}
+
+.message {
+  @apply p-4 rounded-lg bg-white shadow-sm animate-slideIn;
+}
+
+.game-container {
+  @apply container mx-auto px-4 py-8;
+}
+
+.input-container {
+  @apply relative space-y-2;
+}
+
+.game-input {
+  @apply w-full px-4 py-3 rounded-lg border bg-white/50 backdrop-blur-sm
+         focus:outline-none focus:ring-2 focus:ring-primary/20 transition-all;
+}
+
+.button {
+  @apply w-full px-6 py-4 rounded-lg font-medium text-lg
+         bg-gradient-to-r from-primary/90 to-primary 
+         text-primary-foreground shadow-lg shadow-primary/20
+         hover:opacity-90 transition-all transform hover:-translate-y-0.5
+         disabled:opacity-50 disabled:cursor-not-allowed disabled:hover:transform-none
+         focus:outline-none focus:ring-2 focus:ring-primary/20;
+}
+
+.button-secondary {
+  @apply button bg-gradient-to-r from-secondary/90 to-secondary shadow-secondary/20;
+}
+
+.button-accent {
+  @apply button bg-gradient-to-r from-accent/90 to-accent shadow-accent/20;
+}
+
+.card {
+  @apply p-6 rounded-xl bg-white/70 backdrop-blur-sm shadow-xl border animate-fadeIn;
+}
+
+.split-layout {
+  @apply grid grid-cols-1 md:grid-cols-2 gap-4 min-h-screen p-4;
+}
+
+.game-section {
+  @apply p-6 rounded-2xl bg-white/30 backdrop-blur-md;
+}
+
