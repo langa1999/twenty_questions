@@ -4,3 +4,4 @@ backend/.env
 backend/models/__pycache__/
 backend/src/__pycache__/
 __pycache__/
+/frontend/node_modules/
